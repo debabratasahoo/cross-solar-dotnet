@@ -14,47 +14,49 @@ namespace CrossSolar.Controllers
     public class AnalyticsController : Controller
     {
         private readonly IAnalyticsRepository _analyticsRepository;
+        private readonly IDayAnalyticsRepository _dayAnalyticsRepository;
 
         private readonly IPanelRepository _panelRepository;
 
-        public AnalyticsController(IAnalyticsRepository analyticsRepository, IPanelRepository panelRepository)
+        public AnalyticsController(IAnalyticsRepository analyticsRepository, IPanelRepository panelRepository, IDayAnalyticsRepository dayAnalyticsRepository)
         {
             _analyticsRepository = analyticsRepository;
             _panelRepository = panelRepository;
+            _dayAnalyticsRepository = dayAnalyticsRepository;
         }
 
         // GET panel/XXXX1111YYYY2222/analytics
-        [HttpGet("{banelId}/[controller]")]
+        [HttpGet("{panelId}/[controller]")]
         public async Task<IActionResult> Get([FromRoute] string panelId)
-        {
-            var panel = await _panelRepository.Query()
-                .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
+        {    
+                var panel = await _panelRepository.Query()
+                    .FirstOrDefaultAsync(x => x.Id == Convert.ToInt32(panelId));
 
-            if (panel == null) return NotFound();
+                if (panel == null) return NotFound();
 
-            var analytics = await _analyticsRepository.Query()
-                .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
+                var analytics = await _analyticsRepository.Query()
+                    .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
 
-            var result = new OneHourElectricityListModel
-            {
-                OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
+                var result = new OneHourElectricityListModel
                 {
-                    Id = c.Id,
-                    KiloWatt = c.KiloWatt,
-                    DateTime = c.DateTime
-                })
-            };
-
-            return Ok(result);
+                    OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
+                    {
+                        Id = c.Id,
+                        KiloWatt = c.KiloWatt,
+                        DateTime = c.DateTime
+                    })
+                };
+                return Ok(result);           
         }
 
         // GET panel/XXXX1111YYYY2222/analytics/day
         [HttpGet("{panelId}/[controller]/day")]
         public async Task<IActionResult> DayResults([FromRoute] string panelId)
         {
-            var result = new List<OneDayElectricityModel>();
-
-            return Ok(result);
+            if (panelId == String.Empty) return BadRequest(ModelState);
+            
+                var result = await _dayAnalyticsRepository.HistoricalData(panelId);
+                return Ok(result);
         }
 
         // POST panel/XXXX1111YYYY2222/analytics
