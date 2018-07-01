@@ -143,7 +143,6 @@ namespace CrossSolar.Tests.Controller
                 }
             }.AsQueryable();
 
-           // var panels = Enumerable.Empty<Panel>().AsQueryable();
             var onehourelectricity = Enumerable.Empty<OneHourElectricity>().AsQueryable();
 
             var panelmockset = new Mock<DbSet<Panel>>();
